@@ -1,0 +1,51 @@
+{% extends "admin/base.html" %}
+{% block title %}Sales Reports - KOFIKIOSK Admin{% endblock %}
+{% block heading %}Sales Reports{% endblock %}
+{% block content %}
+
+<div class="tag-list">
+  <a href="{{ url_for('admin_reports', period='daily') }}" class="tab-btn {{ 'active' if period=='daily' }}">Daily</a>
+  <a href="{{ url_for('admin_reports', period='weekly') }}" class="tab-btn {{ 'active' if period=='weekly' }}">Weekly</a>
+  <a href="{{ url_for('admin_reports', period='monthly') }}" class="tab-btn {{ 'active' if period=='monthly' }}">Monthly</a>
+  <a href="{{ url_for('admin_reports_export', period=period) }}" class="btn btn-outline">Export CSV</a>
+</div>
+
+<div class="card-row">
+  <div class="stat-card">
+    <div class="num">&#8369;{{ "%.2f"|format(totals.revenue) }}</div>
+    <div class="label">Total Revenue</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ totals.orders }}</div>
+    <div class="label">Total Orders</div>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3 style="margin-top:0;">Revenue by Day</h3>
+  {% if sales_by_day %}
+  <table>
+    <tr><th>Date</th><th>Orders</th><th>Revenue</th></tr>
+    {% for row in sales_by_day %}
+    <tr><td>{{ row.d }}</td><td>{{ row.orders }}</td><td>&#8369;{{ "%.2f"|format(row.revenue) }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="hint">No sales in this period.</p>
+  {% endif %}
+</div>
+
+<div class="admin-card">
+  <h3 style="margin-top:0;">Best-Selling Products</h3>
+  {% if best_sellers %}
+  <table>
+    <tr><th>Item</th><th>Qty Sold</th><th>Revenue</th></tr>
+    {% for t in best_sellers %}
+    <tr><td>{{ t.item_name }}</td><td>{{ t.qty }}</td><td>&#8369;{{ "%.2f"|format(t.revenue) }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="hint">No sales in this period.</p>
+  {% endif %}
+</div>
+{% endblock %}
