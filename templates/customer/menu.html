@@ -1,0 +1,168 @@
+{% extends "customer/base.html" %}
+{% block title %}Menu - KOFIKIOSK{% endblock %}
+{% block content %}
+
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" data-cat="all">All</button>
+  {% for cat in categories %}
+    <button class="tab-btn" data-cat="cat-{{ cat.id }}">{{ cat.name }}</button>
+  {% endfor %}
+</div>
+
+<div class="menu-section">
+  {% for cat in categories %}
+    {% set cat_items = items_by_cat.get(cat.id, []) %}
+    {% if cat_items %}
+    <div class="category-block" data-cat="cat-{{ cat.id }}">
+      <h2 class="category-heading">{{ cat.name }}</h2>
+      <div class="item-grid">
+        {% for item in cat_items %}
+        <div class="item-card">
+          <div class="thumb">
+            {% if item.image_url %}
+              <img src="{{ item.image_url }}" alt="{{ item.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">
+            {% else %}
+              &#9749;
+            {% endif %}
+          </div>
+          <h3>{{ item.name }}</h3>
+          <p>{{ item.description }}</p>
+          <div class="price">from &#8369;{{ "%.2f"|format(item.base_price) }}</div>
+          <button class="btn btn-primary" onclick="openCustomize({{ item.id }})">Customize &amp; Add</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+
+  {% if not items_by_cat %}
+    <div class="empty-state">No menu items available yet. Please check back soon.</div>
+  {% endif %}
+</div>
+
+<!-- Customize modal -->
+<div class="modal-overlay" id="customize-modal">
+  <div class="modal-box">
+    <h2 id="modal-item-name"></h2>
+    <form method="POST" action="{{ url_for('cart_add') }}" id="customize-form">
+      <input type="hidden" name="item_id" id="modal-item-id">
+
+      <div class="option-group">
+        <span class="label">Size</span>
+        <div class="pill-choice" id="modal-sizes"></div>
+      </div>
+
+      <div class="option-group" id="modal-addons-group">
+        <span class="label">Add-ons</span>
+        <div class="pill-choice" id="modal-addons"></div>
+      </div>
+
+      <div class="option-group">
+        <span class="label">Quantity</span>
+        <div class="qty-row">
+          <button type="button" onclick="stepQty(-1)">-</button>
+          <span id="qty-display">1</span>
+          <button type="button" onclick="stepQty(1)">+</button>
+          <input type="hidden" name="quantity" id="modal-qty" value="1">
+        </div>
+      </div>
+
+      <div class="option-group">
+        <span class="label">Special Instructions (optional)</span>
+        <textarea name="instructions" rows="2" placeholder="e.g. less ice, no whip"></textarea>
+      </div>
+
+      <div class="modal-total">Total: &#8369;<span id="modal-total">0.00</span></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeCustomize()">Cancel</button>
+        <button type="submit" class="btn btn-accent">Add to Order</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const MENU_DATA = {{ menu_data|tojson }};
+let currentQty = 1;
+
+function switchTab(el) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const cat = el.dataset.cat;
+  document.querySelectorAll('.category-block').forEach(block => {
+    block.style.display = (cat === 'all' || block.dataset.cat === cat) ? '' : 'none';
+  });
+}
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn));
+});
+
+function openCustomize(itemId) {
+  const item = MENU_DATA[itemId];
+  if (!item) return;
+  document.getElementById('modal-item-id').value = itemId;
+  document.getElementById('modal-item-name').textContent = item.name;
+  currentQty = 1;
+  document.getElementById('qty-display').textContent = 1;
+  document.getElementById('modal-qty').value = 1;
+
+  const sizesEl = document.getElementById('modal-sizes');
+  sizesEl.innerHTML = '';
+  item.sizes.forEach((s, idx) => {
+    const label = document.createElement('label');
+    label.innerHTML = `<input type="radio" name="size_id" value="${s.id}" ${idx === 0 ? 'checked' : ''}>
+      <span>${s.name}${s.price_delta ? ' (+' + s.price_delta.toFixed(2) + ')' : ''}</span>`;
+    sizesEl.appendChild(label);
+  });
+
+  const addonsGroup = document.getElementById('modal-addons-group');
+  const addonsEl = document.getElementById('modal-addons');
+  addonsEl.innerHTML = '';
+  if (item.addons.length === 0) {
+    addonsGroup.style.display = 'none';
+  } else {
+    addonsGroup.style.display = '';
+    item.addons.forEach(a => {
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" name="addon_ids" value="${a.id}">
+        <span>${a.name} (+${a.price.toFixed(2)})</span>`;
+      addonsEl.appendChild(label);
+    });
+  }
+
+  document.getElementById('customize-form').querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('change', recalcModalTotal);
+  });
+  recalcModalTotal();
+  document.getElementById('customize-modal').classList.add('open');
+}
+
+function closeCustomize() {
+  document.getElementById('customize-modal').classList.remove('open');
+}
+
+function stepQty(delta) {
+  currentQty = Math.max(1, Math.min(20, currentQty + delta));
+  document.getElementById('qty-display').textContent = currentQty;
+  document.getElementById('modal-qty').value = currentQty;
+  recalcModalTotal();
+}
+
+function recalcModalTotal() {
+  const itemId = document.getElementById('modal-item-id').value;
+  const item = MENU_DATA[itemId];
+  if (!item) return;
+  const sizeInput = document.querySelector('input[name="size_id"]:checked');
+  const sizeDelta = sizeInput ? (item.sizes.find(s => s.id == sizeInput.value)?.price_delta || 0) : 0;
+  let addonTotal = 0;
+  document.querySelectorAll('input[name="addon_ids"]:checked').forEach(cb => {
+    const addon = item.addons.find(a => a.id == cb.value);
+    if (addon) addonTotal += addon.price;
+  });
+  const unit = item.base_price + sizeDelta + addonTotal;
+  document.getElementById('modal-total').textContent = (unit * currentQty).toFixed(2);
+}
+</script>
+{% endblock %}

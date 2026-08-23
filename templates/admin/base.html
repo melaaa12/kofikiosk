@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin - KOFIKIOSK{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="admin-shell">
+  <nav class="admin-sidebar">
+    <div class="brand">KOFIKIOSK Admin</div>
+    <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.endpoint=='admin_dashboard' }}">Dashboard</a>
+    <a href="{{ url_for('admin_orders') }}" class="{{ 'active' if request.endpoint in ['admin_orders','admin_order_detail'] }}">Orders</a>
+    <a href="{{ url_for('admin_menu') }}" class="{{ 'active' if request.endpoint in ['admin_menu','admin_menu_new','admin_menu_edit'] }}">Menu Items</a>
+    <a href="{{ url_for('admin_categories') }}" class="{{ 'active' if request.endpoint=='admin_categories' }}">Categories</a>
+    <a href="{{ url_for('admin_promos') }}" class="{{ 'active' if request.endpoint=='admin_promos' }}">Promo Codes</a>
+    <a href="{{ url_for('admin_reports') }}" class="{{ 'active' if request.endpoint=='admin_reports' }}">Sales Reports</a>
+    <a href="{{ url_for('admin_settings') }}" class="{{ 'active' if request.endpoint=='admin_settings' }}">Settings</a>
+    <a href="{{ url_for('menu') }}" target="_blank">View Kiosk &#8599;</a>
+    <a href="{{ url_for('admin_logout') }}">Logout</a>
+  </nav>
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1 style="margin:0;">{% block heading %}{% endblock %}</h1>
+      <div>Signed in as <strong>{{ session.get('admin_username') }}</strong></div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap" style="max-width:none;padding:0;margin-bottom:16px;">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

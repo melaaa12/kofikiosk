@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% block title %}Menu Items - KOFIKIOSK Admin{% endblock %}
+{% block heading %}Menu Items{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:16px;">
+  <a href="{{ url_for('admin_menu_new') }}" class="btn btn-primary">+ Add Menu Item</a>
+</div>
+
+<div class="admin-card">
+  {% if items %}
+  <table>
+    <tr><th>Name</th><th>Category</th><th>Base Price</th><th>Available</th><th>Actions</th></tr>
+    {% for i in items %}
+    <tr>
+      <td>{{ i.name }}</td>
+      <td>{{ i.category_name }}</td>
+      <td>&#8369;{{ "%.2f"|format(i.base_price) }}</td>
+      <td>{% if i.is_available %}Yes{% else %}Hidden{% endif %}</td>
+      <td>
+        <a href="{{ url_for('admin_menu_edit', item_id=i.id) }}" class="btn btn-outline" style="padding:4px 12px;font-size:.8rem;">Edit</a>
+        <form method="POST" action="{{ url_for('admin_menu_delete', item_id=i.id) }}"
+              onsubmit="return confirm('Delete this menu item?');" style="display:inline;">
+          <button type="submit" class="btn btn-danger" style="padding:4px 12px;font-size:.8rem;">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="hint">No menu items yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

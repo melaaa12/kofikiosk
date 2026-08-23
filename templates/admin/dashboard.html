@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard - KOFIKIOSK Admin{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="card-row">
+  <div class="stat-card">
+    <div class="num">&#8369;{{ "%.2f"|format(today_sales.s) }}</div>
+    <div class="label">Today's Sales</div>
+  </div>
+  <div class="stat-card">
+    <div class="num">{{ today_sales.c }}</div>
+    <div class="label">Orders Today</div>
+  </div>
+</div>
+
+<div class="admin-card">
+  <h3 style="margin-top:0;">Recent Orders</h3>
+  {% if recent_orders %}
+  <table>
+    <tr><th>Order #</th><th>Customer</th><th>Total</th><th>Status</th><th>Placed</th></tr>
+    {% for o in recent_orders %}
+    <tr>
+      <td><a href="{{ url_for('admin_order_detail', order_id=o.id) }}">{{ o.order_number }}</a></td>
+      <td>{{ o.customer_name }}</td>
+      <td>&#8369;{{ "%.2f"|format(o.total) }}</td>
+      <td><span class="badge-status {{ o.status }}">{{ o.status }}</span></td>
+      <td>{{ o.created_at }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="hint">No orders yet.</p>
+  {% endif %}
+</div>
+
+<div class="admin-card">
+  <h3 style="margin-top:0;">Best-Selling Items (All Time)</h3>
+  {% if top_items %}
+  <table>
+    <tr><th>Item</th><th>Qty Sold</th><th>Revenue</th></tr>
+    {% for t in top_items %}
+    <tr><td>{{ t.item_name }}</td><td>{{ t.qty }}</td><td>&#8369;{{ "%.2f"|format(t.revenue) }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+    <p class="hint">No sales data yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

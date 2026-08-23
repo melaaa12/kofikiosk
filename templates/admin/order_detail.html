@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+{% block title %}Order {{ order.order_number }} - KOFIKIOSK Admin{% endblock %}
+{% block heading %}Order {{ order.order_number }}{% endblock %}
+{% block content %}
+
+<div class="admin-card">
+  <div class="summary-row"><span>Customer</span><span>{{ order.customer_name }}</span></div>
+  <div class="summary-row"><span>Type</span><span>{{ order.order_type }}</span></div>
+  <div class="summary-row"><span>Payment</span><span>{{ order.payment_method }}</span></div>
+  <div class="summary-row"><span>Placed</span><span>{{ order.created_at }}</span></div>
+  <div class="summary-row"><span>Status</span>
+    <form method="POST" action="{{ url_for('admin_order_status', order_id=order.id) }}" class="inline-form">
+      <select name="status" onchange="this.form.submit()">
+        {% for s in ['Pending','Preparing','Completed','Cancelled'] %}
+          <option value="{{ s }}" {% if order.status==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+</div>
+
+<div class="admin-card">
+  <table>
+    <tr><th>Item</th><th>Size</th><th>Add-ons</th><th>Qty</th><th>Unit Price</th><th>Line Total</th></tr>
+    {% for i in items %}
+    <tr>
+      <td>{{ i.item_name }}</td>
+      <td>{{ i.size_name }}</td>
+      <td>{{ i.addons_summary or '-' }}</td>
+      <td>{{ i.quantity }}</td>
+      <td>&#8369;{{ "%.2f"|format(i.unit_price) }}</td>
+      <td>&#8369;{{ "%.2f"|format(i.line_total) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="summary-box">
+  <div class="summary-row"><span>Subtotal</span><span>&#8369;{{ "%.2f"|format(order.subtotal) }}</span></div>
+  {% if order.discount_amount %}
+    <div class="summary-row"><span>{{ order.discount_label }}</span><span>-&#8369;{{ "%.2f"|format(order.discount_amount) }}</span></div>
+  {% endif %}
+  <div class="summary-row"><span>Tax</span><span>&#8369;{{ "%.2f"|format(order.tax_amount) }}</span></div>
+  <div class="summary-row total"><span>Total</span><span>&#8369;{{ "%.2f"|format(order.total) }}</span></div>
+</div>
+
+<a href="{{ url_for('admin_orders') }}" class="btn btn-outline">Back to Orders</a>
+{% endblock %}

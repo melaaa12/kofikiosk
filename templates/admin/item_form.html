@@ -1,0 +1,86 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Edit' if item else 'New' }} Menu Item - KOFIKIOSK Admin{% endblock %}
+{% block heading %}{{ 'Edit Menu Item' if item else 'New Menu Item' }}{% endblock %}
+{% block content %}
+
+<div class="admin-card">
+  <form method="POST">
+    <div class="form-row">
+      <label for="name">Item Name</label>
+      <input type="text" id="name" name="name" required value="{{ item.name if item else '' }}">
+    </div>
+    <div class="form-row">
+      <label for="category_id">Category</label>
+      <select id="category_id" name="category_id" required>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {% if item and item.category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" rows="2">{{ item.description if item else '' }}</textarea>
+    </div>
+    <div class="form-row">
+      <label for="base_price">Base Price (PHP)</label>
+      <input type="number" step="0.01" min="0" id="base_price" name="base_price" required
+             value="{{ item.base_price if item else '' }}">
+    </div>
+    <div class="form-row">
+      <label for="image_url">Image URL (optional)</label>
+      <input type="text" id="image_url" name="image_url" value="{{ item.image_url if item else '' }}">
+    </div>
+    {% if item %}
+    <div class="form-row">
+      <label><input type="checkbox" name="is_available" {% if item.is_available %}checked{% endif %} style="width:auto;"> Available on kiosk menu</label>
+    </div>
+    {% endif %}
+    <button type="submit" class="btn btn-primary">{{ 'Save Changes' if item else 'Create Item' }}</button>
+    <a href="{{ url_for('admin_menu') }}" class="btn btn-outline">Cancel</a>
+  </form>
+</div>
+
+{% if item %}
+<div class="admin-card">
+  <h3 style="margin-top:0;">Sizes</h3>
+  <div class="tag-list">
+    {% for s in sizes %}
+    <div class="tag-chip">
+      {{ s.name }} (+&#8369;{{ "%.2f"|format(s.price_delta) }})
+      <form method="POST" action="{{ url_for('admin_size_delete', size_id=s.id) }}" style="display:inline;">
+        <button type="submit" title="Remove">&times;</button>
+      </form>
+    </div>
+    {% else %}
+      <span class="hint">No sizes yet.</span>
+    {% endfor %}
+  </div>
+  <form method="POST" action="{{ url_for('admin_size_add', item_id=item.id) }}" class="inline-form">
+    <input type="text" name="name" placeholder="Size name (e.g. Large)" required style="max-width:180px;">
+    <input type="number" step="0.01" name="price_delta" placeholder="+ Price" style="max-width:120px;">
+    <button type="submit" class="btn btn-outline">Add Size</button>
+  </form>
+</div>
+
+<div class="admin-card">
+  <h3 style="margin-top:0;">Add-ons</h3>
+  <div class="tag-list">
+    {% for a in addons %}
+    <div class="tag-chip">
+      {{ a.name }} (+&#8369;{{ "%.2f"|format(a.price) }})
+      <form method="POST" action="{{ url_for('admin_addon_delete', addon_id=a.id) }}" style="display:inline;">
+        <button type="submit" title="Remove">&times;</button>
+      </form>
+    </div>
+    {% else %}
+      <span class="hint">No add-ons yet.</span>
+    {% endfor %}
+  </div>
+  <form method="POST" action="{{ url_for('admin_addon_add', item_id=item.id) }}" class="inline-form">
+    <input type="text" name="name" placeholder="Add-on name (e.g. Extra Shot)" required style="max-width:220px;">
+    <input type="number" step="0.01" name="price" placeholder="Price" style="max-width:120px;">
+    <button type="submit" class="btn btn-outline">Add Add-on</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}
